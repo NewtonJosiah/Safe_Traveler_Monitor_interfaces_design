@@ -6,6 +6,7 @@ interface Journey {
   startTime: Date | null;
   estimatedArrival: Date | null;
   currentLocation: { lat: number; lng: number };
+  destination: { lat: number; lng: number } | null;
 }
 
 interface Notification {
@@ -116,6 +117,14 @@ export function MonitorInterface({ journey, notifications, locationHistory }: Mo
                           {journey.estimatedArrival ? formatDate(journey.estimatedArrival) : '-'}
                         </span>
                       </div>
+                      {journey.destination && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Destination:</span>
+                          <span className="font-medium font-mono text-xs">
+                            {journey.destination.lat.toFixed(4)}, {journey.destination.lng.toFixed(4)}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-gray-600">Current Location:</span>
                         <span className="font-medium font-mono text-xs">
@@ -215,6 +224,27 @@ export function MonitorInterface({ journey, notifications, locationHistory }: Mo
                           />
                         )}
                       </svg>
+
+                      {/* Destination marker */}
+                      {journey.destination && (
+                        <div
+                          className="absolute"
+                          style={{
+                            left: `${((journey.destination.lng + 180) / 360) * 100}%`,
+                            top: `${((90 - journey.destination.lat) / 180) * 100}%`,
+                            transform: 'translate(-50%, -100%)',
+                          }}
+                        >
+                          <div className="relative">
+                            <div className="bg-green-600 rounded-full p-2 shadow-lg">
+                              <MapPin className="w-5 h-5 text-white" fill="white" />
+                            </div>
+                            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-white font-bold bg-green-700 px-1.5 py-0.5 rounded whitespace-nowrap">
+                              Dest
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Current location marker */}
                       <div

@@ -9,6 +9,7 @@ interface Journey {
   startTime: Date | null;
   estimatedArrival: Date | null;
   currentLocation: { lat: number; lng: number };
+  destination: { lat: number; lng: number } | null;
 }
 
 interface Notification {
@@ -25,6 +26,7 @@ export default function App() {
     startTime: null,
     estimatedArrival: null,
     currentLocation: { lat: 40.7128, lng: -74.006 }, // Default: New York
+    destination: null,
   });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [locationHistory, setLocationHistory] = useState<{ lat: number; lng: number }[]>([]);
@@ -86,7 +88,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [journey.isActive, journey.estimatedArrival, hasExpiredAlertSent, viewMode]);
 
-  const handleStartJourney = (estimatedMinutes: number) => {
+  const handleStartJourney = (estimatedMinutes: number, destination: { lat: number; lng: number }) => {
     const startTime = new Date();
     const estimatedArrival = new Date(startTime.getTime() + estimatedMinutes * 60 * 1000);
 
@@ -95,6 +97,7 @@ export default function App() {
       startTime,
       estimatedArrival,
       currentLocation: { lat: 40.7128, lng: -74.006 },
+      destination,
     });
 
     setLocationHistory([{ lat: 40.7128, lng: -74.006 }]);
@@ -145,6 +148,7 @@ export default function App() {
       startTime: null,
       estimatedArrival: null,
       currentLocation: journey.currentLocation,
+      destination: null,
     });
 
     toast.success('Journey ended safely!', {
