@@ -29,12 +29,8 @@ A real-time traveler safety application that helps ease the anxiety of next of k
 
 ## Technology Stack
 
-- **React** with TypeScript
-- **Tailwind CSS** for styling
-- **Lucide React** for icons
-- **Sonner** for toast notifications
-- **Vite** for build tooling
-
+-Android studio
+-Figma
 ## Demo Mode
 
 Currently running in demo mode with:
