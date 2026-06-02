@@ -1,4 +1,4 @@
-# Safe Travel App
+# Safe Travel Monitor
 
 A real-time traveler safety application that helps ease the anxiety of next of kin when their relatives are traveling at night or in safety-critical areas.
 
