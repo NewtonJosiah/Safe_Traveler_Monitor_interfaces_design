@@ -1,8 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TravelerInterface } from './components/TravelerInterface';
 import { MonitorInterface } from './components/MonitorInterface';
 import { Users, User } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
+
+function haversineMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number }
+): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLng = Math.sin(dLng / 2);
+  const c =
+    sinDLat * sinDLat +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * sinDLng * sinDLng;
+  return R * 2 * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+}
 
 interface Journey {
   isActive: boolean;
@@ -25,35 +41,73 @@ export default function App() {
     isActive: false,
     startTime: null,
     estimatedArrival: null,
-    currentLocation: { lat: 40.7128, lng: -74.006 }, // Default: New York
+    currentLocation: { lat: 40.7128, lng: -74.006 },
     destination: null,
   });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [locationHistory, setLocationHistory] = useState<{ lat: number; lng: number }[]>([]);
   const [hasExpiredAlertSent, setHasExpiredAlertSent] = useState(false);
 
-  // Simulate location updates during active journey
+  // Keep a ref to the latest journey so interval callbacks never go stale
+  const journeyRef = useRef(journey);
+  useEffect(() => {
+    journeyRef.current = journey;
+  });
+
+  // Define handleEndJourney BEFORE the effects that use it to avoid TDZ
+  const handleEndJourney = (auto = false) => {
+    const msg: Notification = {
+      id: Date.now().toString(),
+      type: 'journey_ended',
+      message: auto
+        ? 'Journey completed automatically — traveler arrived within 20 m of destination.'
+        : 'Journey completed safely. Traveler has arrived at destination.',
+      timestamp: new Date(),
+    };
+    setNotifications((prev) => [msg, ...prev]);
+    setJourney((prev) => ({
+      isActive: false,
+      startTime: null,
+      estimatedArrival: null,
+      currentLocation: prev.currentLocation,
+      destination: null,
+    }));
+    toast.success(auto ? 'Auto-arrived! Journey ended.' : 'Journey ended safely!', {
+      description: auto
+        ? 'Traveler is within 20 m of the destination. Monitor has been notified.'
+        : 'Monitor has been notified of safe arrival.',
+    });
+  };
+
+  // Keep a ref to handleEndJourney so the interval can always call the latest version
+  const handleEndJourneyRef = useRef(handleEndJourney);
+  useEffect(() => {
+    handleEndJourneyRef.current = handleEndJourney;
+  });
+
+  // Simulate location updates; auto-end when within 20 m of destination
   useEffect(() => {
     if (!journey.isActive) return;
 
     const interval = setInterval(() => {
-      setJourney((prev) => {
-        // Simulate movement (random walk)
-        const latChange = (Math.random() - 0.5) * 0.001;
-        const lngChange = (Math.random() - 0.5) * 0.001;
-        const newLocation = {
-          lat: prev.currentLocation.lat + latChange,
-          lng: prev.currentLocation.lng + lngChange,
-        };
+      const j = journeyRef.current;
+      if (!j.isActive) return;
 
-        setLocationHistory((history) => [...history, newLocation]);
+      const latChange = (Math.random() - 0.5) * 0.001;
+      const lngChange = (Math.random() - 0.5) * 0.001;
+      const newLocation = {
+        lat: j.currentLocation.lat + latChange,
+        lng: j.currentLocation.lng + lngChange,
+      };
 
-        return {
-          ...prev,
-          currentLocation: newLocation,
-        };
-      });
-    }, 3000); // Update every 3 seconds
+      if (j.destination && haversineMeters(newLocation, j.destination) <= 20) {
+        handleEndJourneyRef.current(true);
+        return;
+      }
+
+      setLocationHistory((history) => [...history, newLocation]);
+      setJourney((prev) => ({ ...prev, currentLocation: newLocation }));
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [journey.isActive]);
@@ -134,33 +188,10 @@ export default function App() {
     });
   };
 
-  const handleEndJourney = () => {
-    const notification: Notification = {
-      id: Date.now().toString(),
-      type: 'journey_ended',
-      message: 'Journey completed safely. Traveler has arrived at destination.',
-      timestamp: new Date(),
-    };
-    setNotifications((prev) => [notification, ...prev]);
-
-    setJourney({
-      isActive: false,
-      startTime: null,
-      estimatedArrival: null,
-      currentLocation: journey.currentLocation,
-      destination: null,
-    });
-
-    toast.success('Journey ended safely!', {
-      description: 'Monitor has been notified of safe arrival.',
-    });
-  };
-
   return (
     <div className="size-full">
       <Toaster position="top-right" richColors />
 
-      {/* View Mode Toggle */}
       <div className="fixed top-4 right-4 z-50 bg-white rounded-full shadow-lg p-2 flex gap-2">
         <button
           onClick={() => setViewMode('traveler')}
@@ -186,13 +217,12 @@ export default function App() {
         </button>
       </div>
 
-      {/* Render Active Interface */}
       {viewMode === 'traveler' ? (
         <TravelerInterface
           journey={journey}
           onStartJourney={handleStartJourney}
           onEmergency={handleEmergency}
-          onEndJourney={handleEndJourney}
+          onEndJourney={() => handleEndJourney(false)}
         />
       ) : (
         <MonitorInterface journey={journey} notifications={notifications} locationHistory={locationHistory} />
