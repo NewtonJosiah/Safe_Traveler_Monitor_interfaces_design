@@ -5,7 +5,7 @@ A real-time traveler safety application that helps ease the anxiety of next of k
 ## Features
 
 ### Traveler Interface
-- **Start Journey**: Begin tracking with customizable estimated arrival time
+- **Start Journey**: Begin tracking with an automatically generated estimated arrival time
 - **Real-time Location Tracking**: GPS coordinates are shared with monitors
 - **Emergency Alert Button**: Send immediate distress signal to monitors
 - **Journey Status**: View elapsed time, current location, and ETA
@@ -20,7 +20,7 @@ A real-time traveler safety application that helps ease the anxiety of next of k
 
 ## How It Works
 
-1. **Traveler starts journey**: Presses the start button and sets estimated travel time
+1. **Traveler starts journey**: Presses the start button and the estimated travel time is auto generated
 2. **Monitor is notified**: Receives SMS/notification with journey details and ETA
 3. **Real-time tracking**: Monitor can view traveler's location updates on a live map
 4. **Emergency response**: Traveler can press emergency button if in danger
